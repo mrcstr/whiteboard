@@ -1,0 +1,23 @@
+{
+  "name": "@whiteboard/editor",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no lint configured'"
+  },
+  "dependencies": {
+    "@whiteboard/types": "workspace:*",
+    "zustand": "^4.5.0",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/react": "^18.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

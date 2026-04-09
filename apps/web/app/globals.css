@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+  }
+
+  body {
+    @apply bg-white text-zinc-900 antialiased;
+  }
+
+  * {
+    @apply border-zinc-200;
+  }
+}
+
+@layer components {
+  /* Board canvas background with dot grid */
+  .board-canvas {
+    background-color: #fafaf9;
+    background-image: radial-gradient(circle, #d6d3d1 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Sticky note shadows */
+  .sticky-shadow {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Selection ring */
+  .element-selected {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  /* Resize handles */
+  .resize-handle {
+    @apply absolute h-3 w-3 rounded-full border-2 border-blue-500 bg-white;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

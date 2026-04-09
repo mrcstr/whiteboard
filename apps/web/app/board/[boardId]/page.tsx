@@ -24,8 +24,8 @@ export default function BoardPage() {
         color: "#3b82f6",
       }}
       initialStorage={{
-        elements: new LiveMap(),
-elementOrder: new LiveList([]),
+        elements: new LiveMap<string, any>(),
+elementOrder: new LiveList<string>([]),
       }}
     >
       <ClientSideSuspense

@@ -19,8 +19,8 @@ type Presence = {
 };
 
 type Storage = {
-  elements: LiveMap<string, BoardElement>;
-  elementOrder: LiveList<string>;
+  elements: any;
+  elementOrder: any;
 };
 
 type UserMeta = {

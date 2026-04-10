@@ -1,13 +1,9 @@
 import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db) as NextAuthOptions["adapter"],
   session: {
     strategy: "jwt",
   },
@@ -47,22 +43,6 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    ...(process.env.GITHUB_CLIENT_ID
-      ? [
-          GitHubProvider({
-            clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-          }),
-        ]
-      : []),
-    ...(process.env.GOOGLE_CLIENT_ID
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-          }),
-        ]
-      : []),
   ],
   callbacks: {
     async session({ session, token }) {
@@ -77,7 +57,6 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-// Extend next-auth types
 declare module "next-auth" {
   interface Session {
     user: {

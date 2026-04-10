@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import type { BoardElement, Point } from "@whiteboard/types";
 import { useEditorStore, screenToCanvas } from "@whiteboard/editor";
 import { StickyNote } from "./StickyNote";
@@ -38,7 +38,6 @@ export function BoardElementRenderer({
 
       onSelect(element.id, e.shiftKey);
 
-      // Start dragging
       const canvasPoint = screenToCanvas(
         { x: e.clientX, y: e.clientY },
         camera,
@@ -95,6 +94,7 @@ export function BoardElementRenderer({
     height: element.type === "line" ? Math.max(element.size.height, 20) : element.size.height,
     overflow: element.type === "line" ? "visible" : undefined,
     transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
+    transformOrigin: "center center",
     opacity: element.opacity,
     zIndex: element.zIndex,
     cursor: element.locked ? "default" : "move",
@@ -136,7 +136,7 @@ export function BoardElementRenderer({
           <svg
             width="100%"
             height="100%"
-            viewBox={`0 0 100 100`}
+            viewBox="0 0 100 100"
             preserveAspectRatio="none"
             className="pointer-events-none overflow-visible"
             style={{ position: "absolute", inset: 0 }}
@@ -240,6 +240,41 @@ export function BoardElementRenderer({
             );
           })}
         </>
+      )}
+
+      {/* Rotation handle */}
+      {isSelected && !element.locked && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <div
+            className="h-4 w-4 rounded-full border-2 border-blue-500 bg-white cursor-grab hover:bg-blue-50"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              const centerX = element.position.x + element.size.width / 2;
+              const centerY = element.position.y + element.size.height / 2;
+              const zoom = camera.zoom;
+
+              const onMove = (ev: PointerEvent) => {
+                const canvasX = (ev.clientX - useEditorStore.getState().camera.x) / zoom;
+                const canvasY = (ev.clientY - useEditorStore.getState().camera.y) / zoom;
+                const angle = Math.atan2(canvasY - centerY, canvasX - centerX);
+                let degrees = (angle * 180) / Math.PI + 90;
+                if (degrees < 0) degrees += 360;
+                if (ev.shiftKey) degrees = Math.round(degrees / 15) * 15;
+
+                onUpdate(element.id, { rotation: Math.round(degrees) } as any);
+              };
+
+              const onUp = () => {
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
+              };
+
+              window.addEventListener("pointermove", onMove);
+              window.addEventListener("pointerup", onUp);
+            }}
+          />
+          <div className="h-4 w-px bg-blue-500" />
+        </div>
       )}
     </div>
   );

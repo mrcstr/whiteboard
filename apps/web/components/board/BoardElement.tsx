@@ -190,10 +190,58 @@ export function BoardElementRenderer({
       {/* Resize handles */}
       {isSelected && !element.locked && (
         <>
-          <div className="resize-handle -right-1.5 -top-1.5 cursor-ne-resize" />
-          <div className="resize-handle -left-1.5 -top-1.5 cursor-nw-resize" />
-          <div className="resize-handle -bottom-1.5 -right-1.5 cursor-se-resize" />
-          <div className="resize-handle -bottom-1.5 -left-1.5 cursor-sw-resize" />
+          {["nw", "ne", "se", "sw"].map((corner) => {
+            const posStyle: React.CSSProperties =
+              corner === "nw" ? { left: -6, top: -6, cursor: "nw-resize" }
+              : corner === "ne" ? { right: -6, top: -6, cursor: "ne-resize" }
+              : corner === "se" ? { right: -6, bottom: -6, cursor: "se-resize" }
+              : { left: -6, bottom: -6, cursor: "sw-resize" };
+
+            return (
+              <div
+                key={corner}
+                className="resize-handle"
+                style={posStyle}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  const startX = e.clientX;
+                  const startY = e.clientY;
+                  const startW = element.size.width;
+                  const startH = element.size.height;
+                  const startPos = { ...element.position };
+                  const zoom = camera.zoom;
+
+                  const onMove = (ev: PointerEvent) => {
+                    const dx = (ev.clientX - startX) / zoom;
+                    const dy = (ev.clientY - startY) / zoom;
+
+                    let newX = startPos.x;
+                    let newY = startPos.y;
+                    let newW = startW;
+                    let newH = startH;
+
+                    if (corner.includes("e")) newW = Math.max(20, startW + dx);
+                    if (corner.includes("w")) { newW = Math.max(20, startW - dx); newX = startPos.x + (startW - newW); }
+                    if (corner.includes("s")) newH = Math.max(20, startH + dy);
+                    if (corner.includes("n")) { newH = Math.max(20, startH - dy); newY = startPos.y + (startH - newH); }
+
+                    onUpdate(element.id, {
+                      position: { x: newX, y: newY },
+                      size: { width: newW, height: newH },
+                    } as any);
+                  };
+
+                  const onUp = () => {
+                    window.removeEventListener("pointermove", onMove);
+                    window.removeEventListener("pointerup", onUp);
+                  };
+
+                  window.addEventListener("pointermove", onMove);
+                  window.addEventListener("pointerup", onUp);
+                }}
+              />
+            );
+          })}
         </>
       )}
     </div>

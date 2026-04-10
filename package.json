@@ -1,23 +1,42 @@
 {
-  "name": "whiteboard",
+  "name": "@whiteboard/web",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "db:generate": "pnpm --filter @whiteboard/db db:generate",
-    "db:push": "pnpm --filter @whiteboard/db db:push",
-    "db:studio": "pnpm --filter @whiteboard/db db:studio",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "dev": "next dev",
+    "build": "prisma generate --schema=./prisma/schema.prisma && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.4.0",
+    "@liveblocks/client": "^2.3.0",
+    "@liveblocks/react": "^2.3.0",
+    "@liveblocks/node": "^2.3.0",
+    "@neondatabase/serverless": "^0.9.0",
+    "@prisma/adapter-neon": "5.22.0",
+    "@prisma/client": "5.22.0",
+    "@whiteboard/editor": "workspace:*",
+    "@whiteboard/types": "workspace:*",
+    "@whiteboard/ui": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "prisma": "5.22.0",
+    "lucide-react": "^0.400.0",
+    "next": "14.2.5",
+    "next-auth": "^4.24.7",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
-    "turbo": "^2.1.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
     "typescript": "^5.5.0"
-  },
-  "packageManager": "pnpm@9.6.0",
-  "engines": {
-    "node": ">=20"
   }
 }

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+export * from "@prisma/client";
 
 declare global {
   // Prevent multiple Prisma instances in development

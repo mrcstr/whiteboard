@@ -131,40 +131,36 @@ export function BoardElementRenderer({
             onStopEditing={() => setEditingId(null)}
           />
         );
-      case "line":
+      case "line": {
         return (
           <svg
-            width={element.size.width}
-            height={element.size.height}
-            viewBox={`0 0 ${element.size.width} ${element.size.height}`}
-            className="pointer-events-none"
+            width="100%"
+            height="100%"
+            viewBox={`0 0 100 100`}
+            preserveAspectRatio="none"
+            className="pointer-events-none overflow-visible"
+            style={{ position: "absolute", inset: 0 }}
           >
-            <polyline
-              points={element.points.map((p: any) => `${p.x},${p.y}`).join(" ")}
-              fill="none"
-              stroke={element.strokeColor}
-              strokeWidth={element.strokeWidth}
+            <line
+              x1={0}
+              y1={50}
+              x2={100}
+              y2={50}
+              stroke={element.strokeColor || "#1a1a1a"}
+              strokeWidth={3}
+              vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
-              strokeLinejoin="round"
             />
-            {element.endEndStyle === "arrow" && element.points.length >= 2 && (
+            {element.endEndStyle === "arrow" && (
               <polygon
-                points={(() => {
-                  const last = element.points[element.points.length - 1];
-                  const prev = element.points[element.points.length - 2];
-                  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
-                  const size = 10;
-                  const p1x = last.x - size * Math.cos(angle - 0.4);
-                  const p1y = last.y - size * Math.sin(angle - 0.4);
-                  const p2x = last.x - size * Math.cos(angle + 0.4);
-                  const p2y = last.y - size * Math.sin(angle + 0.4);
-                  return `${last.x},${last.y} ${p1x},${p1y} ${p2x},${p2y}`;
-                })()}
-                fill={element.strokeColor}
+                points="95,45 100,50 95,55"
+                fill={element.strokeColor || "#1a1a1a"}
+                vectorEffect="non-scaling-stroke"
               />
             )}
           </svg>
         );
+      }
       case "image":
         return (
           <img

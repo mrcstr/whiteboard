@@ -130,6 +130,40 @@ export function BoardElementRenderer({
             onStopEditing={() => setEditingId(null)}
           />
         );
+      case "line":
+        return (
+          <svg
+            width={element.size.width}
+            height={element.size.height}
+            viewBox={`0 0 ${element.size.width} ${element.size.height}`}
+            className="pointer-events-none"
+          >
+            <polyline
+              points={element.points.map((p: any) => `${p.x},${p.y}`).join(" ")}
+              fill="none"
+              stroke={element.strokeColor}
+              strokeWidth={element.strokeWidth}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {element.endEndStyle === "arrow" && element.points.length >= 2 && (
+              <polygon
+                points={(() => {
+                  const last = element.points[element.points.length - 1];
+                  const prev = element.points[element.points.length - 2];
+                  const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+                  const size = 10;
+                  const p1x = last.x - size * Math.cos(angle - 0.4);
+                  const p1y = last.y - size * Math.sin(angle - 0.4);
+                  const p2x = last.x - size * Math.cos(angle + 0.4);
+                  const p2y = last.y - size * Math.sin(angle + 0.4);
+                  return `${last.x},${last.y} ${p1x},${p1y} ${p2x},${p2y}`;
+                })()}
+                fill={element.strokeColor}
+              />
+            )}
+          </svg>
+        );
       case "image":
         return (
           <img

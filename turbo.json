@@ -8,10 +8,12 @@
     "LIVEBLOCKS_SECRET_KEY",
     "NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY"
   ],
+  "remoteCache": {},
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "cache": false
     },
     "dev": {
       "cache": false,

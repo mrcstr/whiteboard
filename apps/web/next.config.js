@@ -6,7 +6,18 @@ const nextConfig = {
     "@whiteboard/types",
   ],
   experimental: {
-    serverComponentsExternalPackages: ["@prisma/client", "@prisma/adapter-neon", "@neondatabase/serverless"],
+    serverComponentsExternalPackages: [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push("@prisma/client", "@prisma/engines", "prisma");
+    }
+    return config;
   },
   images: {
     remotePatterns: [

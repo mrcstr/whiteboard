@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@whiteboard/db";
+import { db } from "@/lib/db";
 
 // GET /api/boards - List user's boards
 export async function GET() {

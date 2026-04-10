@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { db } from "@whiteboard/db";
+import { db } from "@/lib/db";
 
 interface Params {
   params: { boardId: string };

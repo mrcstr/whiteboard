@@ -19,7 +19,7 @@
     "@whiteboard/types": "workspace:*",
     "@whiteboard/ui": "workspace:*",
     "bcryptjs": "^2.4.3",
-    "prisma": "^5.22.0",
+    "prisma": "5.22.0",
     "lucide-react": "^0.400.0",
     "next": "14.2.5",
     "next-auth": "^4.24.7",

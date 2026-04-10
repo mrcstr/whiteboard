@@ -1,15 +1,13 @@
-const path = require("path");
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
-  outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: [
     "@whiteboard/ui",
     "@whiteboard/editor",
     "@whiteboard/types",
-    "@whiteboard/db",
   ],
+  experimental: {
+    serverComponentsExternalPackages: ["@prisma/client", "@prisma/adapter-neon", "@neondatabase/serverless"],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },

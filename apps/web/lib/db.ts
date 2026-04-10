@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Pool } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "@prisma/client/edge";
+import { PrismaClient } from "@prisma/client";
 
 declare global {
   var cachedPrisma: PrismaClient | undefined;

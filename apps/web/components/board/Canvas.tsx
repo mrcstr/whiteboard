@@ -13,6 +13,7 @@ import {
   createTextElement,
   createShape,
   createFrame,
+  createLine,
 } from "@whiteboard/editor";
 
 export function Canvas() {
@@ -186,6 +187,18 @@ export function Canvas() {
           addElement(frame);
           history.resume();
           setSelectedIds([frame.id]);
+          setActiveTool("select");
+          return;
+        }
+        case "line": {
+          const line = createLine(
+            [canvasPoint, { x: canvasPoint.x + 200, y: canvasPoint.y }],
+            userId,
+          );
+          history.pause();
+          addElement(line);
+          history.resume();
+          setSelectedIds([line.id]);
           setActiveTool("select");
           return;
         }

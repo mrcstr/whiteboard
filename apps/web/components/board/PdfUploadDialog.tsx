@@ -56,118 +56,149 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
           setProgress({ current: pageNum, total: totalPages });
 
           const page = await pdf.getPage(pageNum);
-          const ops = await page.getOperatorList();
+          let pageImageCount = 0;
 
-          // Collect image object keys from the operator list
-          const imgKeys = new Set<string>();
-          for (let i = 0; i < ops.fnArray.length; i++) {
-            if (
-              ops.fnArray[i] === pdfjsLib.OPS.paintImageXObject ||
-              ops.fnArray[i] === pdfjsLib.OPS.paintXObject
-            ) {
-              imgKeys.add(ops.argsArray[i][0] as string);
-            }
-          }
+          // --- Strategy 1: Extract embedded images via operator list ---
+          try {
+            const ops = await page.getOperatorList();
 
-          // Extract each embedded image
-          for (const key of imgKeys) {
-            try {
-              const imgData: any = await new Promise((resolve, reject) => {
-                page.objs.get(key, (data: any) => {
-                  if (data) resolve(data);
-                  else reject(new Error("no data"));
-                });
-                setTimeout(() => reject(new Error("timeout")), 3000);
-              });
+            // Collect image object keys — check all known paint-image OPS
+            const imgKeys = new Set<string>();
+            const imageOps = [
+              pdfjsLib.OPS.paintImageXObject,
+              pdfjsLib.OPS.paintXObject,
+              pdfjsLib.OPS.paintImageMaskXObject,
+            ].filter(Boolean); // filter out undefined OPS in case version differs
 
-              // Skip very small images (icons, decorations)
-              if (!imgData || imgData.width < 60 || imgData.height < 60) continue;
-
-              const canvas = document.createElement("canvas");
-              canvas.width = imgData.width;
-              canvas.height = imgData.height;
-              const ctx = canvas.getContext("2d")!;
-
-              if (imgData.data) {
-                const imageData = ctx.createImageData(imgData.width, imgData.height);
-                const src = imgData.data;
-                const dst = imageData.data;
-
-                if (imgData.kind === 2) {
-                  // RGB → RGBA
-                  let si = 0;
-                  let di = 0;
-                  const pixelCount = imgData.width * imgData.height;
-                  for (let p = 0; p < pixelCount; p++) {
-                    dst[di++] = src[si++];
-                    dst[di++] = src[si++];
-                    dst[di++] = src[si++];
-                    dst[di++] = 255;
-                  }
-                } else if (imgData.kind === 1) {
-                  // Grayscale → RGBA
-                  let si = 0;
-                  let di = 0;
-                  const pixelCount = imgData.width * imgData.height;
-                  for (let p = 0; p < pixelCount; p++) {
-                    const v = src[si++];
-                    dst[di++] = v;
-                    dst[di++] = v;
-                    dst[di++] = v;
-                    dst[di++] = 255;
-                  }
-                } else {
-                  // RGBA
-                  imageData.data.set(src);
-                }
-
-                ctx.putImageData(imageData, 0, 0);
-                extractedImages.push({
-                  src: canvas.toDataURL("image/png"),
-                  naturalWidth: imgData.width,
-                  naturalHeight: imgData.height,
-                  page: pageNum,
-                });
-              } else if (imgData.src) {
-                // JPEG with src URL
-                const img = new Image();
-                const loaded = await new Promise<boolean>((resolve) => {
-                  img.onload = () => resolve(true);
-                  img.onerror = () => resolve(false);
-                  img.src = imgData.src;
-                });
-
-                if (loaded && img.width > 60 && img.height > 60) {
-                  canvas.width = img.width;
-                  canvas.height = img.height;
-                  ctx.drawImage(img, 0, 0);
-                  extractedImages.push({
-                    src: canvas.toDataURL("image/png"),
-                    naturalWidth: img.width,
-                    naturalHeight: img.height,
-                    page: pageNum,
-                  });
+            for (let i = 0; i < ops.fnArray.length; i++) {
+              if (imageOps.includes(ops.fnArray[i])) {
+                const arg = ops.argsArray[i]?.[0];
+                if (typeof arg === "string") {
+                  imgKeys.add(arg);
                 }
               }
-            } catch {
-              // Skip this image, continue with the next
             }
+
+            // Extract each embedded image
+            for (const key of imgKeys) {
+              try {
+                const imgData: any = await new Promise((resolve, reject) => {
+                  const timer = setTimeout(() => reject(new Error("timeout")), 3000);
+                  page.objs.get(key, (data: any) => {
+                    clearTimeout(timer);
+                    if (data) resolve(data);
+                    else reject(new Error("no data"));
+                  });
+                });
+
+                // Skip very small images (icons, decorations)
+                if (!imgData || (imgData.width ?? 0) < 60 || (imgData.height ?? 0) < 60) continue;
+
+                const canvas = document.createElement("canvas");
+                canvas.width = imgData.width;
+                canvas.height = imgData.height;
+                const ctx = canvas.getContext("2d")!;
+
+                if (imgData.bitmap) {
+                  // pdfjs v4: ImageBitmap-based images
+                  ctx.drawImage(imgData.bitmap, 0, 0);
+                  extractedImages.push({
+                    src: canvas.toDataURL("image/png"),
+                    naturalWidth: imgData.width,
+                    naturalHeight: imgData.height,
+                    page: pageNum,
+                  });
+                  pageImageCount++;
+                } else if (imgData.data) {
+                  // Raw pixel data
+                  const imageData = ctx.createImageData(imgData.width, imgData.height);
+                  const src = imgData.data;
+                  const dst = imageData.data;
+
+                  if (imgData.kind === 2) {
+                    // RGB → RGBA
+                    let si = 0;
+                    let di = 0;
+                    const pixelCount = imgData.width * imgData.height;
+                    for (let p = 0; p < pixelCount; p++) {
+                      dst[di++] = src[si++];
+                      dst[di++] = src[si++];
+                      dst[di++] = src[si++];
+                      dst[di++] = 255;
+                    }
+                  } else if (imgData.kind === 1) {
+                    // Grayscale → RGBA
+                    let si = 0;
+                    let di = 0;
+                    const pixelCount = imgData.width * imgData.height;
+                    for (let p = 0; p < pixelCount; p++) {
+                      const v = src[si++];
+                      dst[di++] = v;
+                      dst[di++] = v;
+                      dst[di++] = v;
+                      dst[di++] = 255;
+                    }
+                  } else {
+                    // RGBA
+                    imageData.data.set(src);
+                  }
+
+                  ctx.putImageData(imageData, 0, 0);
+                  extractedImages.push({
+                    src: canvas.toDataURL("image/png"),
+                    naturalWidth: imgData.width,
+                    naturalHeight: imgData.height,
+                    page: pageNum,
+                  });
+                  pageImageCount++;
+                } else if (imgData.src) {
+                  // JPEG with src URL
+                  const img = new Image();
+                  const loaded = await new Promise<boolean>((resolve) => {
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = imgData.src;
+                  });
+
+                  if (loaded && img.width > 60 && img.height > 60) {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    extractedImages.push({
+                      src: canvas.toDataURL("image/png"),
+                      naturalWidth: img.width,
+                      naturalHeight: img.height,
+                      page: pageNum,
+                    });
+                    pageImageCount++;
+                  }
+                }
+              } catch {
+                // Skip this image, continue with the next
+              }
+            }
+          } catch {
+            // Operator list extraction failed entirely
           }
 
-          // Fallback: if no embedded images found on this page, render the page
-          if (imgKeys.size === 0) {
-            const viewport = page.getViewport({ scale: 2 });
-            const canvas = document.createElement("canvas");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const ctx = canvas.getContext("2d")!;
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            extractedImages.push({
-              src: canvas.toDataURL("image/png"),
-              naturalWidth: viewport.width,
-              naturalHeight: viewport.height,
-              page: pageNum,
-            });
+          // --- Strategy 2: Fallback — render the whole page as image ---
+          if (pageImageCount === 0) {
+            try {
+              const viewport = page.getViewport({ scale: 2 });
+              const canvas = document.createElement("canvas");
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              const ctx = canvas.getContext("2d")!;
+              await page.render({ canvasContext: ctx, viewport }).promise;
+              extractedImages.push({
+                src: canvas.toDataURL("image/png"),
+                naturalWidth: viewport.width,
+                naturalHeight: viewport.height,
+                page: pageNum,
+              });
+            } catch {
+              // Even page rendering failed — skip this page
+            }
           }
         }
 

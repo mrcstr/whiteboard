@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, useState } from "react";
 import { useEditorStore, screenToCanvas, zoomAroundPoint } from "@whiteboard/editor";
 import { useStorage, useMutation, useMyPresence, useHistory, useStatus } from "@/lib/liveblocks";
 import type { BoardElement, Point } from "@whiteboard/types";
 import { BoardElementRenderer } from "./BoardElement";
 import { SelectionBox } from "./SelectionBox";
+import { PdfUploadDialog } from "./PdfUploadDialog";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Loader2 } from "lucide-react";
 import {
@@ -14,6 +15,7 @@ import {
   createShape,
   createFrame,
   createLine,
+  createImage,
 } from "@whiteboard/editor";
 
 export function Canvas() {
@@ -37,6 +39,16 @@ export function Canvas() {
   const [myPresence, updateMyPresence] = useMyPresence();
   const history = useHistory();
   const status = useStatus();
+
+  // PDF upload dialog
+  const [showPdfUpload, setShowPdfUpload] = useState(false);
+
+  // Show PDF dialog when image tool is selected
+  useEffect(() => {
+    if (activeTool === "image") {
+      setShowPdfUpload(true);
+    }
+  }, [activeTool]);
 
   // Get elements from Liveblocks storage
   const elements = useStorage((root) => root.elements);
@@ -96,6 +108,56 @@ export function Canvas() {
       }
     },
     [],
+  );
+
+  // --- PDF image placement ---
+  const handlePdfImages = useCallback(
+    (images: { src: string; naturalWidth: number; naturalHeight: number; page: number }[]) => {
+      const userId = "current-user";
+      // Calculate canvas center for placement
+      const containerRect = canvasRef.current?.getBoundingClientRect();
+      const centerScreen: Point = {
+        x: (containerRect?.width ?? window.innerWidth) / 2,
+        y: (containerRect?.height ?? window.innerHeight) / 2,
+      };
+      const centerCanvas = screenToCanvas(centerScreen, camera);
+
+      const GAP = 24;
+      const TARGET_WIDTH = 200;
+      const cols = Math.min(6, Math.ceil(Math.sqrt(images.length)));
+
+      history.pause();
+
+      const newIds: string[] = [];
+      images.forEach((img, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+
+        const position: Point = {
+          x: centerCanvas.x - ((cols * (TARGET_WIDTH + GAP)) / 2) + col * (TARGET_WIDTH + GAP),
+          y: centerCanvas.y - 100 + row * (TARGET_WIDTH + GAP),
+        };
+
+        const element = createImage(
+          position,
+          userId,
+          img.src,
+          img.naturalWidth,
+          img.naturalHeight,
+        );
+
+        addElement(element);
+        newIds.push(element.id);
+      });
+
+      history.resume();
+
+      if (newIds.length > 0) {
+        setSelectedIds(newIds);
+      }
+      setActiveTool("select");
+    },
+    [camera, addElement, history, setSelectedIds, setActiveTool],
   );
 
   // --- Pointer Handlers ---
@@ -358,6 +420,15 @@ export function Canvas() {
       <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-500 shadow-sm backdrop-blur-sm">
         {Math.round(camera.zoom * 100)}%
       </div>
+
+      <PdfUploadDialog
+        open={showPdfUpload}
+        onClose={() => {
+          setShowPdfUpload(false);
+          setActiveTool("select");
+        }}
+        onImagesReady={handlePdfImages}
+      />
     </div>
   );
 }

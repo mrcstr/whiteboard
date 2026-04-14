@@ -17,6 +17,11 @@ const nextConfig = {
       config.externals = config.externals || [];
       config.externals.push("@prisma/client", "@prisma/engines", "prisma");
     }
+    // pdfjs-dist uses optional 'canvas' module (Node-only) — provide empty fallback for client
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+    };
     return config;
   },
   images: {

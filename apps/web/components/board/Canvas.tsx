@@ -307,6 +307,25 @@ export function Canvas() {
     ],
   );
 
+  const sortedElements: BoardElement[] = React.useMemo(() => {
+    if (!elements || !elementOrder) return [];
+    try {
+      const order = typeof (elementOrder as any).toArray === "function"
+        ? (elementOrder as any).toArray()
+        : Array.from(elementOrder as any);
+      return order
+        .map((id: string) => {
+          const el = typeof (elements as any).get === "function"
+            ? (elements as any).get(id)
+            : (elements as any)[id];
+          return el;
+        })
+        .filter(Boolean) as BoardElement[];
+    } catch {
+      return [];
+    }
+  }, [elements, elementOrder]);
+
   const handlePointerUp = useCallback(() => {
     isPanningRef.current = false;
 
@@ -397,25 +416,6 @@ export function Canvas() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedIds, deleteElements, clearSelection]);
-
-  const sortedElements: BoardElement[] = React.useMemo(() => {
-    if (!elements || !elementOrder) return [];
-    try {
-      const order = typeof (elementOrder as any).toArray === "function"
-        ? (elementOrder as any).toArray()
-        : Array.from(elementOrder as any);
-      return order
-        .map((id: string) => {
-          const el = typeof (elements as any).get === "function"
-            ? (elements as any).get(id)
-            : (elements as any)[id];
-          return el;
-        })
-        .filter(Boolean) as BoardElement[];
-    } catch {
-      return [];
-    }
-  }, [elements, elementOrder]);
 
   // Loading state
   if (!isReady) {

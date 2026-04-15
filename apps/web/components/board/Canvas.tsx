@@ -616,11 +616,19 @@ export function Canvas() {
         });
       } else {
         // Normal scroll: zoom around cursor
-        const newCamera = zoomAroundPoint(
-          camera,
-          { x: e.clientX, y: e.clientY },
-          e.deltaY,
-        );
+        // Normalize delta for different scroll modes (pixel vs line vs page)
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) delta *= 30;  // line mode
+        if (e.deltaMode === 2) delta *= 300; // page mode
+
+        const zoomFactor = delta > 0 ? 0.9 : 1.1; // 10% per scroll step
+        const newZoom = Math.min(Math.max(camera.zoom * zoomFactor, 0.1), 5);
+
+        const newCamera = {
+          x: e.clientX - (e.clientX - camera.x) * (newZoom / camera.zoom),
+          y: e.clientY - (e.clientY - camera.y) * (newZoom / camera.zoom),
+          zoom: newZoom,
+        };
         setCamera(newCamera);
       }
     },

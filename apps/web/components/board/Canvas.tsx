@@ -423,24 +423,20 @@ export function Canvas() {
             key={element.id}
             element={element}
             isSelected={selectedIds.includes(element.id)}
-            selectedIds={selectedIds}
             onSelect={(id, multi) => {
               if (multi) {
-                // Shift+Click: toggle element in selection
                 if (selectedIds.includes(id)) {
                   useEditorStore.getState().removeFromSelection(id);
                 } else {
                   useEditorStore.getState().addToSelection(id);
                 }
               } else if (!selectedIds.includes(id)) {
-                // Click on unselected element: reset to single selection
                 setSelectedIds([id]);
               }
-              // Click on already-selected element: keep current selection (for multi-drag)
               updateMyPresence({ selectedElementIds: selectedIds });
             }}
             onMove={(id, pos) => moveElement(id, pos)}
-            onMoveSelected={(delta) => moveSelectedElements(selectedIds, delta)}
+            onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
             onUpdate={(id, updates) => updateElement(id, updates)}
           />
         ))}

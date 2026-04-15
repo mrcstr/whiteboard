@@ -11,20 +11,18 @@ import { FrameRenderer } from "./FrameRenderer";
 interface Props {
   element: BoardElement;
   isSelected: boolean;
-  selectedIds: string[];
   onSelect: (id: string, multi: boolean) => void;
   onMove: (id: string, position: Point) => void;
-  onMoveSelected: (delta: Point) => void;
+  onMoveMultiple: (ids: string[], delta: Point) => void;
   onUpdate: (id: string, updates: Partial<BoardElement>) => void;
 }
 
 export function BoardElementRenderer({
   element,
   isSelected,
-  selectedIds,
   onSelect,
   onMove,
-  onMoveSelected,
+  onMoveMultiple,
   onUpdate,
 }: Props) {
   const camera = useEditorStore((s) => s.camera);
@@ -54,9 +52,6 @@ export function BoardElementRenderer({
       lastCanvasRef.current = canvasPoint;
       isDraggingRef.current = true;
 
-      // Check if this element is part of a multi-selection
-      const isMultiSelected = isSelected && selectedIds.length > 1;
-
       const onPointerMove = (ev: PointerEvent) => {
         if (!isDraggingRef.current) return;
         const newCanvas = screenToCanvas(
@@ -64,16 +59,18 @@ export function BoardElementRenderer({
           camera,
         );
 
-        if (isMultiSelected) {
-          // Move all selected elements by delta
+        // Read selection directly from store (always fresh)
+        const currentIds = useEditorStore.getState().selectedIds;
+        const isMulti = currentIds.length > 1 && currentIds.includes(element.id);
+
+        if (isMulti) {
           const delta: Point = {
             x: newCanvas.x - lastCanvasRef.current.x,
             y: newCanvas.y - lastCanvasRef.current.y,
           };
           lastCanvasRef.current = newCanvas;
-          onMoveSelected(delta);
+          onMoveMultiple(currentIds, delta);
         } else {
-          // Move single element
           onMove(element.id, {
             x: newCanvas.x - dragOffsetRef.current.x,
             y: newCanvas.y - dragOffsetRef.current.y,
@@ -90,7 +87,7 @@ export function BoardElementRenderer({
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
     },
-    [element, camera, isSelected, selectedIds, onSelect, onMove, onMoveSelected],
+    [element, camera, onSelect, onMove, onMoveMultiple],
   );
 
   const handleDoubleClick = useCallback(

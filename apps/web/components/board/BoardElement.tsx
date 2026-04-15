@@ -14,6 +14,7 @@ interface Props {
   onSelect: (id: string, multi: boolean) => void;
   onMove: (id: string, position: Point) => void;
   onMoveMultiple: (ids: string[], delta: Point) => void;
+  onMoveFrame: (frameId: string, delta: Point) => void;
   onUpdate: (id: string, updates: Partial<BoardElement>) => void;
 }
 
@@ -23,6 +24,7 @@ export function BoardElementRenderer({
   onSelect,
   onMove,
   onMoveMultiple,
+  onMoveFrame,
   onUpdate,
 }: Props) {
   const camera = useEditorStore((s) => s.camera);
@@ -63,16 +65,21 @@ export function BoardElementRenderer({
         const currentIds = useEditorStore.getState().selectedIds;
         const isMulti = currentIds.length > 1 && currentIds.includes(element.id);
 
-        console.log("drag:", element.id, "ids:", currentIds, "isMulti:", isMulti);
+        const delta: Point = {
+          x: newCanvas.x - lastCanvasRef.current.x,
+          y: newCanvas.y - lastCanvasRef.current.y,
+        };
 
         if (isMulti) {
-          const delta: Point = {
-            x: newCanvas.x - lastCanvasRef.current.x,
-            y: newCanvas.y - lastCanvasRef.current.y,
-          };
+          // Multi-select drag
           lastCanvasRef.current = newCanvas;
           onMoveMultiple(currentIds, delta);
+        } else if (element.type === "frame") {
+          // Frame drag: move frame + all children inside
+          lastCanvasRef.current = newCanvas;
+          onMoveFrame(element.id, delta);
         } else {
+          // Single element drag
           onMove(element.id, {
             x: newCanvas.x - dragOffsetRef.current.x,
             y: newCanvas.y - dragOffsetRef.current.y,
@@ -89,7 +96,7 @@ export function BoardElementRenderer({
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
     },
-    [element, camera, onSelect, onMove, onMoveMultiple],
+    [element, camera, onSelect, onMove, onMoveMultiple, onMoveFrame],
   );
 
   const handleDoubleClick = useCallback(

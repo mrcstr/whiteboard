@@ -132,6 +132,59 @@ export function Canvas() {
     [],
   );
 
+  const moveFrameWithChildren = useMutation(
+    ({ storage }, frameId: string, delta: Point) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      const now = Date.now();
+
+      const frame = (els as any).get(frameId);
+      if (!frame) return;
+
+      // Frame bounds before move
+      const fx = frame.position.x;
+      const fy = frame.position.y;
+      const fw = frame.size.width;
+      const fh = frame.size.height;
+
+      // Collect all element IDs to move (frame + children inside)
+      const idsToMove: string[] = [frameId];
+
+      // Check all elements: is their center inside the frame?
+      const allKeys = typeof (els as any).keys === "function"
+        ? Array.from((els as any).keys())
+        : Object.keys(els as any);
+
+      for (const id of allKeys) {
+        if (id === frameId) continue;
+        const el = (els as any).get(id);
+        if (!el || el.locked) continue;
+        // Center of the element
+        const cx = el.position.x + el.size.width / 2;
+        const cy = el.position.y + el.size.height / 2;
+        if (cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh) {
+          idsToMove.push(id);
+        }
+      }
+
+      // Move all
+      for (const id of idsToMove) {
+        const current = (els as any).get(id);
+        if (current) {
+          (els as any).set(id, {
+            ...current,
+            position: {
+              x: current.position.x + delta.x,
+              y: current.position.y + delta.y,
+            },
+            updatedAt: now,
+          });
+        }
+      }
+    },
+    [],
+  );
+
   // --- PDF image placement ---
   const handlePdfImages = useCallback(
     (images: { src: string; naturalWidth: number; naturalHeight: number; page: number }[]) => {
@@ -472,10 +525,8 @@ export function Canvas() {
               }
             }}
             onMove={(id, pos) => moveElement(id, pos)}
-            onMoveMultiple={(ids, delta) => {
-              console.log("moveMultiple", ids, delta);
-              moveSelectedElements(ids, delta);
-            }}
+            onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
+            onMoveFrame={(frameId, delta) => moveFrameWithChildren(frameId, delta)}
             onUpdate={(id, updates) => updateElement(id, updates)}
           />
         ))}

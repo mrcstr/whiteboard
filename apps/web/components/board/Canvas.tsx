@@ -151,8 +151,8 @@ export function Canvas() {
       const idsToMove: string[] = [frameId];
 
       // Check all elements: is their center inside the frame?
-      const allKeys = typeof (els as any).keys === "function"
-        ? Array.from((els as any).keys())
+      const allKeys: string[] = typeof (els as any).keys === "function"
+        ? Array.from((els as any).keys()) as string[]
         : Object.keys(els as any);
 
       for (const id of allKeys) {

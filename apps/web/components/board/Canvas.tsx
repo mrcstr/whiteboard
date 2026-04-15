@@ -661,16 +661,18 @@ export function Canvas() {
       {contextMenu && (() => {
         const targetEl = sortedElements.find((el) => el.id === contextMenu.elementId);
         if (!targetEl) return null;
+        const maxZ = Math.max(0, ...sortedElements.map((el) => el.zIndex ?? 0));
+        const minZ = Math.min(0, ...sortedElements.map((el) => el.zIndex ?? 0));
         return (
           <ContextMenu
             x={contextMenu.x}
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             actions={buildElementActions({
-              onBringToFront: () => bringToFront(contextMenu.elementId),
-              onBringForward: () => bringForward(contextMenu.elementId),
-              onSendBackward: () => sendBackward(contextMenu.elementId),
-              onSendToBack: () => sendToBack(contextMenu.elementId),
+              onBringToFront: () => updateElement(contextMenu.elementId, { zIndex: maxZ + 1 } as any),
+              onBringForward: () => updateElement(contextMenu.elementId, { zIndex: (targetEl.zIndex ?? 0) + 1 } as any),
+              onSendBackward: () => updateElement(contextMenu.elementId, { zIndex: (targetEl.zIndex ?? 0) - 1 } as any),
+              onSendToBack: () => updateElement(contextMenu.elementId, { zIndex: minZ - 1 } as any),
               onDuplicate: () => duplicateElement(contextMenu.elementId),
               onToggleLock: () => toggleLock(contextMenu.elementId),
               onDelete: () => {

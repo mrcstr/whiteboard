@@ -61,6 +61,8 @@ export function ContextMenu({ x, y, actions, onClose }: Props) {
       ref={menuRef}
       style={style}
       className="min-w-[180px] rounded-xl border bg-white/95 p-1 shadow-xl backdrop-blur-md animate-scale-in"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       {actions.map((action, i) => (
         <React.Fragment key={i}>

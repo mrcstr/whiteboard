@@ -608,37 +608,30 @@ export function Canvas() {
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
 
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      // Only zoom when over the canvas area
+      if (!canvasRef.current?.contains(e.target as Node)) return;
       e.preventDefault();
 
       const cam = cameraRef.current;
 
       if (e.shiftKey) {
-        setCamera({
-          ...cam,
-          x: cam.x - e.deltaY,
-        });
+        setCamera({ ...cam, x: cam.x - e.deltaY });
       } else {
         const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
         const newZoom = Math.min(Math.max(cam.zoom * zoomFactor, 0.1), 5);
-
         setCamera({
           x: e.clientX - (e.clientX - cam.x) * (newZoom / cam.zoom),
           y: e.clientY - (e.clientY - cam.y) * (newZoom / cam.zoom),
           zoom: newZoom,
         });
       }
-    },
-    [setCamera],
-  );
+    };
 
-  useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
-  }, [handleWheel]);
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [setCamera]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

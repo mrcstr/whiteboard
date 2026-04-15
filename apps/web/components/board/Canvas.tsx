@@ -484,7 +484,8 @@ export function Canvas() {
             : (elements as any)[id];
           return el;
         })
-        .filter(Boolean) as BoardElement[];
+        .filter(Boolean)
+        .sort((a: BoardElement, b: BoardElement) => (a.zIndex ?? 0) - (b.zIndex ?? 0)) as BoardElement[];
     } catch {
       return [];
     }

@@ -9,6 +9,7 @@ import { BoardHeader } from "@/components/layout/BoardHeader";
 import { Cursors } from "@/components/board/Cursors";
 import { ClientSideSuspense } from "@liveblocks/react";
 import { Loader2 } from "lucide-react";
+import { Minimap } from "@/components/board/Minimap";
 
 export default function BoardPage() {
   const params = useParams();
@@ -43,6 +44,7 @@ elementOrder: new LiveList<string>([]),
             <BoardHeader boardId={boardId} />
             <Canvas />
             <Toolbar />
+            <Minimap />
             <Cursors />
           </div>
         )}

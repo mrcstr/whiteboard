@@ -59,9 +59,12 @@ async function uploadImage(blob: Blob, filename: string): Promise<string> {
   formData.append("file", blob, filename);
 
   const res = await fetch("/api/upload", { method: "POST", body: formData });
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-
   const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.detail || json.error || `Status ${res.status}`);
+  }
+
   return json.url;
 }
 
@@ -206,6 +209,7 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
 
         // Phase 2: Compress & upload each image to Vercel Blob
         const extractedImages: ExtractedImage[] = [];
+        let lastUploadError = "";
 
         for (let i = 0; i < canvasImages.length; i++) {
           setProgress({ current: i + 1, total: canvasImages.length, phase: "Lade hoch" });
@@ -214,13 +218,14 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
             const { blob, width, height } = await canvasToBlob(img.canvas, img.width, img.height);
             const url = await uploadImage(blob, `pdf-p${img.page}-${i}.jpg`);
             extractedImages.push({ src: url, naturalWidth: width, naturalHeight: height, page: img.page });
-          } catch {
-            console.warn(`Upload of image ${i + 1} failed, skipping`);
+          } catch (uploadErr: any) {
+            lastUploadError = uploadErr?.message || "Unbekannter Fehler";
+            console.warn(`Upload of image ${i + 1} failed:`, lastUploadError);
           }
         }
 
         if (extractedImages.length === 0) {
-          setError("Bilder konnten nicht hochgeladen werden. Prüfe die BLOB_READ_WRITE_TOKEN Umgebungsvariable.");
+          setError(`Upload fehlgeschlagen: ${lastUploadError}`);
           setIsProcessing(false);
           return;
         }

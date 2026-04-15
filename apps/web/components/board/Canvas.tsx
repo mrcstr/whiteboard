@@ -669,10 +669,26 @@ export function Canvas() {
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             actions={buildElementActions({
-              onBringToFront: () => updateElement(contextMenu.elementId, { zIndex: maxZ + 1 } as any),
-              onBringForward: () => updateElement(contextMenu.elementId, { zIndex: (targetEl.zIndex ?? 0) + 1 } as any),
-              onSendBackward: () => updateElement(contextMenu.elementId, { zIndex: (targetEl.zIndex ?? 0) - 1 } as any),
-              onSendToBack: () => updateElement(contextMenu.elementId, { zIndex: minZ - 1 } as any),
+              onBringToFront: () => {
+                const newZ = maxZ + 1;
+                console.log("BRING TO FRONT", contextMenu.elementId, "currentZ:", targetEl.zIndex, "newZ:", newZ, "maxZ:", maxZ);
+                updateElement(contextMenu.elementId, { zIndex: newZ } as any);
+              },
+              onBringForward: () => {
+                const newZ = (targetEl.zIndex ?? 0) + 1;
+                console.log("BRING FORWARD", contextMenu.elementId, "currentZ:", targetEl.zIndex, "newZ:", newZ);
+                updateElement(contextMenu.elementId, { zIndex: newZ } as any);
+              },
+              onSendBackward: () => {
+                const newZ = (targetEl.zIndex ?? 0) - 1;
+                console.log("SEND BACKWARD", contextMenu.elementId, "currentZ:", targetEl.zIndex, "newZ:", newZ);
+                updateElement(contextMenu.elementId, { zIndex: newZ } as any);
+              },
+              onSendToBack: () => {
+                const newZ = minZ - 1;
+                console.log("SEND TO BACK", contextMenu.elementId, "currentZ:", targetEl.zIndex, "newZ:", newZ, "minZ:", minZ);
+                updateElement(contextMenu.elementId, { zIndex: newZ } as any);
+              },
               onDuplicate: () => duplicateElement(contextMenu.elementId),
               onToggleLock: () => toggleLock(contextMenu.elementId),
               onDelete: () => {

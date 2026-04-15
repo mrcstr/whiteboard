@@ -608,19 +608,20 @@ export function Canvas() {
     (e: WheelEvent) => {
       e.preventDefault();
 
-      if (e.ctrlKey || e.metaKey) {
+      if (e.shiftKey) {
+        // Shift + Scroll: horizontal pan
+        setCamera({
+          ...camera,
+          x: camera.x - e.deltaY,
+        });
+      } else {
+        // Normal scroll: zoom around cursor
         const newCamera = zoomAroundPoint(
           camera,
           { x: e.clientX, y: e.clientY },
           e.deltaY,
         );
         setCamera(newCamera);
-      } else {
-        setCamera({
-          ...camera,
-          x: camera.x - e.deltaX,
-          y: camera.y - e.deltaY,
-        });
       }
     },
     [camera, setCamera],

@@ -11,16 +11,20 @@ import { FrameRenderer } from "./FrameRenderer";
 interface Props {
   element: BoardElement;
   isSelected: boolean;
+  selectedIds: string[];
   onSelect: (id: string, multi: boolean) => void;
   onMove: (id: string, position: Point) => void;
+  onMoveSelected: (delta: Point) => void;
   onUpdate: (id: string, updates: Partial<BoardElement>) => void;
 }
 
 export function BoardElementRenderer({
   element,
   isSelected,
+  selectedIds,
   onSelect,
   onMove,
+  onMoveSelected,
   onUpdate,
 }: Props) {
   const camera = useEditorStore((s) => s.camera);
@@ -28,6 +32,7 @@ export function BoardElementRenderer({
   const setEditingId = useEditorStore((s) => s.setEditingElementId);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef<Point>({ x: 0, y: 0 });
+  const lastCanvasRef = useRef<Point>({ x: 0, y: 0 });
 
   const isEditing = editingId === element.id;
 
@@ -46,7 +51,11 @@ export function BoardElementRenderer({
         x: canvasPoint.x - element.position.x,
         y: canvasPoint.y - element.position.y,
       };
+      lastCanvasRef.current = canvasPoint;
       isDraggingRef.current = true;
+
+      // Check if this element is part of a multi-selection
+      const isMultiSelected = isSelected && selectedIds.length > 1;
 
       const onPointerMove = (ev: PointerEvent) => {
         if (!isDraggingRef.current) return;
@@ -54,10 +63,22 @@ export function BoardElementRenderer({
           { x: ev.clientX, y: ev.clientY },
           camera,
         );
-        onMove(element.id, {
-          x: newCanvas.x - dragOffsetRef.current.x,
-          y: newCanvas.y - dragOffsetRef.current.y,
-        });
+
+        if (isMultiSelected) {
+          // Move all selected elements by delta
+          const delta: Point = {
+            x: newCanvas.x - lastCanvasRef.current.x,
+            y: newCanvas.y - lastCanvasRef.current.y,
+          };
+          lastCanvasRef.current = newCanvas;
+          onMoveSelected(delta);
+        } else {
+          // Move single element
+          onMove(element.id, {
+            x: newCanvas.x - dragOffsetRef.current.x,
+            y: newCanvas.y - dragOffsetRef.current.y,
+          });
+        }
       };
 
       const onPointerUp = () => {
@@ -69,7 +90,7 @@ export function BoardElementRenderer({
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
     },
-    [element, camera, onSelect, onMove],
+    [element, camera, isSelected, selectedIds, onSelect, onMove, onMoveSelected],
   );
 
   const handleDoubleClick = useCallback(

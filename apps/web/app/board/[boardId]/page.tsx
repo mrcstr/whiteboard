@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import { RoomProvider, LiveMap, LiveList } from "@/lib/liveblocks";
 import { Canvas } from "@/components/board/Canvas";
 import { Toolbar } from "@/components/board/Toolbar";
+import { Minimap } from "@/components/board/Minimap";
 import { BoardHeader } from "@/components/layout/BoardHeader";
 import { Cursors } from "@/components/board/Cursors";
 import { ClientSideSuspense } from "@liveblocks/react";
 import { Loader2 } from "lucide-react";
-import { Minimap } from "@/components/board/Minimap";
 
 export default function BoardPage() {
   const params = useParams();

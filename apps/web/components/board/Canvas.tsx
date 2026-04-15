@@ -110,6 +110,28 @@ export function Canvas() {
     [],
   );
 
+  const moveSelectedElements = useMutation(
+    ({ storage }, ids: string[], delta: Point) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      const now = Date.now();
+      for (const id of ids) {
+        const current = (els as any).get(id);
+        if (current && !current.locked) {
+          (els as any).set(id, {
+            ...current,
+            position: {
+              x: current.position.x + delta.x,
+              y: current.position.y + delta.y,
+            },
+            updatedAt: now,
+          });
+        }
+      }
+    },
+    [],
+  );
+
   // --- PDF image placement ---
   const handlePdfImages = useCallback(
     (images: { src: string; naturalWidth: number; naturalHeight: number; page: number }[]) => {
@@ -401,6 +423,7 @@ export function Canvas() {
             key={element.id}
             element={element}
             isSelected={selectedIds.includes(element.id)}
+            selectedIds={selectedIds}
             onSelect={(id, multi) => {
               if (multi) {
                 useEditorStore.getState().addToSelection(id);
@@ -410,6 +433,7 @@ export function Canvas() {
               updateMyPresence({ selectedElementIds: [id] });
             }}
             onMove={(id, pos) => moveElement(id, pos)}
+            onMoveSelected={(delta) => moveSelectedElements(selectedIds, delta)}
             onUpdate={(id, updates) => updateElement(id, updates)}
           />
         ))}

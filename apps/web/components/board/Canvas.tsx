@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useEffect, useState } from "react";
-import { useEditorStore, screenToCanvas, zoomAroundPoint } from "@whiteboard/editor";
+import { useEditorStore, screenToCanvas, zoomAroundPoint, boundsOverlap } from "@whiteboard/editor";
 import { useStorage, useMutation, useMyPresence, useHistory, useStatus } from "@/lib/liveblocks";
 import type { BoardElement, Point } from "@whiteboard/types";
 import { BoardElementRenderer } from "./BoardElement";
@@ -309,9 +309,45 @@ export function Canvas() {
 
   const handlePointerUp = useCallback(() => {
     isPanningRef.current = false;
+
+    // Rubber-band selection: find elements inside the selection box
+    if (selectionBox && dragStartRef.current) {
+      const box = selectionBox;
+      // Convert screen-space box to canvas coordinates
+      const topLeft = screenToCanvas({ x: box.x, y: box.y }, camera);
+      const bottomRight = screenToCanvas(
+        { x: box.x + box.width, y: box.y + box.height },
+        camera,
+      );
+      const canvasBounds = {
+        x: Math.min(topLeft.x, bottomRight.x),
+        y: Math.min(topLeft.y, bottomRight.y),
+        width: Math.abs(bottomRight.x - topLeft.x),
+        height: Math.abs(bottomRight.y - topLeft.y),
+      };
+
+      // Only select if the box has meaningful size (not just a click)
+      if (canvasBounds.width > 5 || canvasBounds.height > 5) {
+        const hitIds = sortedElements
+          .filter((el) =>
+            boundsOverlap(canvasBounds, {
+              x: el.position.x,
+              y: el.position.y,
+              width: el.size.width,
+              height: el.size.height,
+            }),
+          )
+          .map((el) => el.id);
+
+        if (hitIds.length > 0) {
+          setSelectedIds(hitIds);
+        }
+      }
+    }
+
     dragStartRef.current = null;
     setSelectionBox(null);
-  }, [setSelectionBox]);
+  }, [selectionBox, camera, sortedElements, setSelectedIds, setSelectionBox]);
 
   const handlePointerLeave = useCallback(() => {
     updateMyPresence({ cursor: null });

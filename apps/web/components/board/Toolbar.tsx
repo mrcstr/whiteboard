@@ -53,12 +53,22 @@ const SHAPE_OPTIONS: { type: ShapeType; icon: React.ReactNode; label: string }[]
 ];
 
 const STICKY_COLORS: { color: StickyColor; hex: string }[] = [
-  { color: "yellow", hex: "#fef08a" },
-  { color: "blue", hex: "#93c5fd" },
-  { color: "green", hex: "#86efac" },
-  { color: "pink", hex: "#f9a8d4" },
-  { color: "purple", hex: "#c4b5fd" },
-  { color: "orange", hex: "#fdba74" },
+  { color: "yellow", hex: "#fff9c4" },
+  { color: "yellow-dark", hex: "#ffe082" },
+  { color: "orange", hex: "#ffe0b2" },
+  { color: "coral", hex: "#ff8a80" },
+  { color: "pink", hex: "#f8bbd0" },
+  { color: "pink-dark", hex: "#f48fb1" },
+  { color: "blue-light", hex: "#bbdefb" },
+  { color: "purple", hex: "#b39ddb" },
+  { color: "cyan", hex: "#80deea" },
+  { color: "blue", hex: "#64b5f6" },
+  { color: "teal", hex: "#80cbc4" },
+  { color: "green", hex: "#66bb6a" },
+  { color: "lime-light", hex: "#f0f4c3" },
+  { color: "lime", hex: "#c6ff00" },
+  { color: "white", hex: "#ffffff" },
+  { color: "dark", hex: "#424242" },
 ];
 
 export function Toolbar() {
@@ -175,22 +185,26 @@ export function Toolbar() {
 
       {/* Sticky color picker popup */}
       {showColorPicker && activeTool === "sticky-note" && (
-        <div className="absolute bottom-[88px] left-1/2 z-30 flex -translate-x-1/2 gap-1.5 rounded-xl border bg-white p-2.5 shadow-lg animate-scale-in">
-          {STICKY_COLORS.map((c) => (
-            <button
-              key={c.color}
-              onClick={() => {
-                setActiveStickyColor(c.color);
-                setShowColorPicker(false);
-              }}
-              className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
-                activeStickyColor === c.color
-                  ? "border-zinc-800 scale-110"
-                  : "border-transparent"
-              }`}
-              style={{ backgroundColor: c.hex }}
-            />
-          ))}
+        <div className="absolute bottom-[88px] left-1/2 z-30 -translate-x-1/2 rounded-xl border bg-white p-2.5 shadow-lg animate-scale-in">
+          <div className="grid grid-cols-2 gap-1.5">
+            {STICKY_COLORS.map((c) => (
+              <button
+                key={c.color}
+                onClick={() => {
+                  setActiveStickyColor(c.color);
+                  setShowColorPicker(false);
+                }}
+                className={`h-8 w-8 rounded-lg border-2 transition-transform hover:scale-110 ${
+                  activeStickyColor === c.color
+                    ? "border-zinc-800 scale-110"
+                    : c.color === "white"
+                      ? "border-zinc-200"
+                      : "border-transparent"
+                }`}
+                style={{ backgroundColor: c.hex }}
+              />
+            ))}
+          </div>
         </div>
       )}
 

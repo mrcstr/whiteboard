@@ -16,12 +16,23 @@ const ELEMENT_COLORS: Record<string, string> = {
 };
 
 const STICKY_COLORS: Record<string, string> = {
-  yellow: "#fde68a",
-  blue: "#93c5fd",
-  green: "#86efac",
-  pink: "#f9a8d4",
-  purple: "#c4b5fd",
-  orange: "#fdba74",
+  yellow: "#fff9c4",
+  "yellow-dark": "#ffe082",
+  orange: "#ffe0b2",
+  coral: "#ff8a80",
+  pink: "#f8bbd0",
+  "pink-dark": "#f48fb1",
+  "blue-light": "#bbdefb",
+  purple: "#b39ddb",
+  cyan: "#80deea",
+  blue: "#64b5f6",
+  teal: "#80cbc4",
+  green: "#66bb6a",
+  "lime-light": "#f0f4c3",
+  lime: "#c6ff00",
+  white: "#ffffff",
+  dark: "#424242",
+  gray: "#d4d4d8",
 };
 
 const MINIMAP_WIDTH = 180;

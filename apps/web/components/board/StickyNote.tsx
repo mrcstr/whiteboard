@@ -4,12 +4,22 @@ import React, { useRef, useEffect } from "react";
 import type { StickyNoteElement } from "@whiteboard/types";
 
 const STICKY_COLORS: Record<string, string> = {
-  yellow: "#fef08a",
-  blue: "#93c5fd",
-  green: "#86efac",
-  pink: "#f9a8d4",
-  purple: "#c4b5fd",
-  orange: "#fdba74",
+  yellow: "#fff9c4",
+  "yellow-dark": "#ffe082",
+  orange: "#ffe0b2",
+  coral: "#ff8a80",
+  pink: "#f8bbd0",
+  "pink-dark": "#f48fb1",
+  "blue-light": "#bbdefb",
+  purple: "#b39ddb",
+  cyan: "#80deea",
+  blue: "#64b5f6",
+  teal: "#80cbc4",
+  green: "#66bb6a",
+  "lime-light": "#f0f4c3",
+  lime: "#c6ff00",
+  white: "#ffffff",
+  dark: "#424242",
   gray: "#d4d4d8",
 };
 
@@ -31,6 +41,8 @@ export function StickyNote({ element, isEditing, onUpdate, onStopEditing }: Prop
   }, [isEditing]);
 
   const bgColor = STICKY_COLORS[element.color] ?? STICKY_COLORS.yellow;
+  const isDark = element.color === "dark";
+  const textColor = isDark ? "#ffffff" : "#27272a";
 
   return (
     <div
@@ -54,17 +66,19 @@ export function StickyNote({ element, isEditing, onUpdate, onStopEditing }: Prop
           onKeyDown={(e) => {
             if (e.key === "Escape") onStopEditing();
           }}
-          className="flex-1 resize-none bg-transparent text-zinc-800 outline-none placeholder:text-zinc-400/60"
-          style={{ fontSize: element.fontSize }}
+          className="flex-1 resize-none bg-transparent outline-none"
+          style={{ fontSize: element.fontSize, color: textColor }}
           placeholder="Type something…"
         />
       ) : (
         <p
-          className="flex-1 select-none overflow-hidden text-zinc-800"
-          style={{ fontSize: element.fontSize }}
+          className="flex-1 select-none overflow-hidden"
+          style={{ fontSize: element.fontSize, color: textColor }}
         >
           {element.content || (
-            <span className="text-zinc-400/60">Double-click to edit</span>
+            <span style={{ color: isDark ? "rgba(255,255,255,0.4)" : "rgba(113,113,122,0.4)" }}>
+              Doppelklick zum Bearbeiten
+            </span>
           )}
         </p>
       )}

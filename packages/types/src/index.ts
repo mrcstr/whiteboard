@@ -50,11 +50,21 @@ export type LineEndStyle = "none" | "arrow" | "dot" | "square";
 /** Sticky note color presets */
 export type StickyColor =
   | "yellow"
-  | "blue"
-  | "green"
-  | "pink"
-  | "purple"
+  | "yellow-dark"
   | "orange"
+  | "coral"
+  | "pink"
+  | "pink-dark"
+  | "blue-light"
+  | "purple"
+  | "cyan"
+  | "blue"
+  | "teal"
+  | "green"
+  | "lime-light"
+  | "lime"
+  | "white"
+  | "dark"
   | "gray";
 
 /** Base properties shared by all elements */

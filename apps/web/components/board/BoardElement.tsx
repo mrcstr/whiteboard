@@ -63,6 +63,8 @@ export function BoardElementRenderer({
         const currentIds = useEditorStore.getState().selectedIds;
         const isMulti = currentIds.length > 1 && currentIds.includes(element.id);
 
+        console.log("drag:", element.id, "ids:", currentIds, "isMulti:", isMulti);
+
         if (isMulti) {
           const delta: Point = {
             x: newCanvas.x - lastCanvasRef.current.x,

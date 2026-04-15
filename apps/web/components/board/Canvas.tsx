@@ -424,19 +424,22 @@ export function Canvas() {
             element={element}
             isSelected={selectedIds.includes(element.id)}
             onSelect={(id, multi) => {
+              const store = useEditorStore.getState();
               if (multi) {
-                if (selectedIds.includes(id)) {
-                  useEditorStore.getState().removeFromSelection(id);
+                if (store.selectedIds.includes(id)) {
+                  store.removeFromSelection(id);
                 } else {
-                  useEditorStore.getState().addToSelection(id);
+                  store.addToSelection(id);
                 }
-              } else if (!selectedIds.includes(id)) {
-                setSelectedIds([id]);
+              } else if (!store.selectedIds.includes(id)) {
+                store.setSelectedIds([id]);
               }
-              updateMyPresence({ selectedElementIds: selectedIds });
             }}
             onMove={(id, pos) => moveElement(id, pos)}
-            onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
+            onMoveMultiple={(ids, delta) => {
+              console.log("moveMultiple", ids, delta);
+              moveSelectedElements(ids, delta);
+            }}
             onUpdate={(id, updates) => updateElement(id, updates)}
           />
         ))}

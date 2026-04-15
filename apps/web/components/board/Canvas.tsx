@@ -619,39 +619,34 @@ export function Canvas() {
         }}
       >
         {sortedElements.map((element) => (
-          <div
+          <BoardElementRenderer
             key={element.id}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setContextMenu({ x: e.clientX, y: e.clientY, elementId: element.id });
+            element={element}
+            isSelected={selectedIds.includes(element.id)}
+            onSelect={(id, multi) => {
               const store = useEditorStore.getState();
-              if (!store.selectedIds.includes(element.id)) {
-                store.setSelectedIds([element.id]);
+              if (multi) {
+                if (store.selectedIds.includes(id)) {
+                  store.removeFromSelection(id);
+                } else {
+                  store.addToSelection(id);
+                }
+              } else if (!store.selectedIds.includes(id)) {
+                store.setSelectedIds([id]);
               }
             }}
-          >
-            <BoardElementRenderer
-              element={element}
-              isSelected={selectedIds.includes(element.id)}
-              onSelect={(id, multi) => {
-                const store = useEditorStore.getState();
-                if (multi) {
-                  if (store.selectedIds.includes(id)) {
-                    store.removeFromSelection(id);
-                  } else {
-                    store.addToSelection(id);
-                  }
-                } else if (!store.selectedIds.includes(id)) {
-                  store.setSelectedIds([id]);
-                }
-              }}
-              onMove={(id, pos) => moveElement(id, pos)}
-              onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
-              onMoveFrame={(frameId, delta) => moveFrameWithChildren(frameId, delta)}
-              onUpdate={(id, updates) => updateElement(id, updates)}
-            />
-          </div>
+            onMove={(id, pos) => moveElement(id, pos)}
+            onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
+            onMoveFrame={(frameId, delta) => moveFrameWithChildren(frameId, delta)}
+            onUpdate={(id, updates) => updateElement(id, updates)}
+            onContextMenu={(e, id) => {
+              setContextMenu({ x: e.clientX, y: e.clientY, elementId: id });
+              const store = useEditorStore.getState();
+              if (!store.selectedIds.includes(id)) {
+                store.setSelectedIds([id]);
+              }
+            }}
+          />
         ))}
       </div>
 

@@ -16,6 +16,7 @@ interface Props {
   onMoveMultiple: (ids: string[], delta: Point) => void;
   onMoveFrame: (frameId: string, delta: Point) => void;
   onUpdate: (id: string, updates: Partial<BoardElement>) => void;
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
 export function BoardElementRenderer({
@@ -26,6 +27,7 @@ export function BoardElementRenderer({
   onMoveMultiple,
   onMoveFrame,
   onUpdate,
+  onContextMenu,
 }: Props) {
   const camera = useEditorStore((s) => s.camera);
   const editingId = useEditorStore((s) => s.editingElementId);
@@ -207,6 +209,13 @@ export function BoardElementRenderer({
       style={style}
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(e) => {
+        if (onContextMenu) {
+          e.preventDefault();
+          e.stopPropagation();
+          onContextMenu(e, element.id);
+        }
+      }}
       className={isSelected ? "element-selected" : ""}
     >
       {renderInner()}

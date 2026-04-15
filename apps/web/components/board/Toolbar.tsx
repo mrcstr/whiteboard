@@ -90,13 +90,23 @@ export function Toolbar() {
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const handleToolClick = (tool: ToolType) => {
-    if (tool === "shape" && activeTool === "shape") {
-      setShowShapePicker(!showShapePicker);
+    if (tool === "shape") {
+      if (activeTool === "shape") {
+        setShowShapePicker(!showShapePicker);
+      } else {
+        setActiveTool(tool);
+        setShowShapePicker(true);
+      }
       setShowColorPicker(false);
       return;
     }
-    if (tool === "sticky-note" && activeTool === "sticky-note") {
-      setShowColorPicker(!showColorPicker);
+    if (tool === "sticky-note") {
+      if (activeTool === "sticky-note") {
+        setShowColorPicker(!showColorPicker);
+      } else {
+        setActiveTool(tool);
+        setShowColorPicker(true);
+      }
       setShowShapePicker(false);
       return;
     }

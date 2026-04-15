@@ -7,6 +7,7 @@ import type { BoardElement, Point } from "@whiteboard/types";
 import { BoardElementRenderer } from "./BoardElement";
 import { SelectionBox } from "./SelectionBox";
 import { PdfUploadDialog } from "./PdfUploadDialog";
+import { ContextMenu, buildElementActions } from "./ContextMenu";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Loader2 } from "lucide-react";
 import {
@@ -42,6 +43,13 @@ export function Canvas() {
 
   // PDF upload dialog
   const [showPdfUpload, setShowPdfUpload] = useState(false);
+
+  // Context menu
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    elementId: string;
+  } | null>(null);
 
   // Show PDF dialog when image tool is selected
   useEffect(() => {
@@ -185,6 +193,108 @@ export function Canvas() {
     [],
   );
 
+  // --- Z-Index / Layer mutations ---
+  const bringToFront = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      let maxZ = 0;
+      const allKeys: string[] = typeof (els as any).keys === "function"
+        ? Array.from((els as any).keys()) as string[]
+        : Object.keys(els as any);
+      for (const k of allKeys) {
+        const el = (els as any).get(k);
+        if (el?.zIndex > maxZ) maxZ = el.zIndex;
+      }
+      const current = (els as any).get(id);
+      if (current) {
+        (els as any).set(id, { ...current, zIndex: maxZ + 1, updatedAt: Date.now() });
+      }
+    },
+    [],
+  );
+
+  const sendToBack = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      let minZ = 0;
+      const allKeys: string[] = typeof (els as any).keys === "function"
+        ? Array.from((els as any).keys()) as string[]
+        : Object.keys(els as any);
+      for (const k of allKeys) {
+        const el = (els as any).get(k);
+        if (el?.zIndex < minZ) minZ = el.zIndex;
+      }
+      const current = (els as any).get(id);
+      if (current) {
+        (els as any).set(id, { ...current, zIndex: minZ - 1, updatedAt: Date.now() });
+      }
+    },
+    [],
+  );
+
+  const bringForward = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      const current = (els as any).get(id);
+      if (current) {
+        (els as any).set(id, { ...current, zIndex: (current.zIndex ?? 0) + 1, updatedAt: Date.now() });
+      }
+    },
+    [],
+  );
+
+  const sendBackward = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      const current = (els as any).get(id);
+      if (current) {
+        (els as any).set(id, { ...current, zIndex: (current.zIndex ?? 0) - 1, updatedAt: Date.now() });
+      }
+    },
+    [],
+  );
+
+  const duplicateElement = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      const order = storage.get("elementOrder");
+      if (!els || !order) return;
+      const current = (els as any).get(id);
+      if (!current) return;
+      const newId = id + "-copy-" + Date.now();
+      const copy = {
+        ...current,
+        id: newId,
+        position: {
+          x: current.position.x + 20,
+          y: current.position.y + 20,
+        },
+        zIndex: (current.zIndex ?? 0) + 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      (els as any).set(newId, copy);
+      (order as any).push(newId);
+    },
+    [],
+  );
+
+  const toggleLock = useMutation(
+    ({ storage }, id: string) => {
+      const els = storage.get("elements");
+      if (!els) return;
+      const current = (els as any).get(id);
+      if (current) {
+        (els as any).set(id, { ...current, locked: !current.locked, updatedAt: Date.now() });
+      }
+    },
+    [],
+  );
+
   // --- PDF image placement ---
   const handlePdfImages = useCallback(
     (images: { src: string; naturalWidth: number; naturalHeight: number; page: number }[]) => {
@@ -272,6 +382,7 @@ export function Canvas() {
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!isReady) return;
+      setContextMenu(null);
 
       const point = { x: e.clientX, y: e.clientY };
       const canvasPoint = screenToCanvas(point, camera);
@@ -508,27 +619,39 @@ export function Canvas() {
         }}
       >
         {sortedElements.map((element) => (
-          <BoardElementRenderer
+          <div
             key={element.id}
-            element={element}
-            isSelected={selectedIds.includes(element.id)}
-            onSelect={(id, multi) => {
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContextMenu({ x: e.clientX, y: e.clientY, elementId: element.id });
               const store = useEditorStore.getState();
-              if (multi) {
-                if (store.selectedIds.includes(id)) {
-                  store.removeFromSelection(id);
-                } else {
-                  store.addToSelection(id);
-                }
-              } else if (!store.selectedIds.includes(id)) {
-                store.setSelectedIds([id]);
+              if (!store.selectedIds.includes(element.id)) {
+                store.setSelectedIds([element.id]);
               }
             }}
-            onMove={(id, pos) => moveElement(id, pos)}
-            onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
-            onMoveFrame={(frameId, delta) => moveFrameWithChildren(frameId, delta)}
-            onUpdate={(id, updates) => updateElement(id, updates)}
-          />
+          >
+            <BoardElementRenderer
+              element={element}
+              isSelected={selectedIds.includes(element.id)}
+              onSelect={(id, multi) => {
+                const store = useEditorStore.getState();
+                if (multi) {
+                  if (store.selectedIds.includes(id)) {
+                    store.removeFromSelection(id);
+                  } else {
+                    store.addToSelection(id);
+                  }
+                } else if (!store.selectedIds.includes(id)) {
+                  store.setSelectedIds([id]);
+                }
+              }}
+              onMove={(id, pos) => moveElement(id, pos)}
+              onMoveMultiple={(ids, delta) => moveSelectedElements(ids, delta)}
+              onMoveFrame={(frameId, delta) => moveFrameWithChildren(frameId, delta)}
+              onUpdate={(id, updates) => updateElement(id, updates)}
+            />
+          </div>
         ))}
       </div>
 
@@ -537,6 +660,32 @@ export function Canvas() {
       <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-500 shadow-sm backdrop-blur-sm">
         {Math.round(camera.zoom * 100)}%
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (() => {
+        const targetEl = sortedElements.find((el) => el.id === contextMenu.elementId);
+        if (!targetEl) return null;
+        return (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            actions={buildElementActions({
+              onBringToFront: () => bringToFront(contextMenu.elementId),
+              onBringForward: () => bringForward(contextMenu.elementId),
+              onSendBackward: () => sendBackward(contextMenu.elementId),
+              onSendToBack: () => sendToBack(contextMenu.elementId),
+              onDuplicate: () => duplicateElement(contextMenu.elementId),
+              onToggleLock: () => toggleLock(contextMenu.elementId),
+              onDelete: () => {
+                deleteElements([contextMenu.elementId]);
+                clearSelection();
+              },
+              isLocked: targetEl.locked,
+            })}
+          />
+        );
+      })()}
 
       <PdfUploadDialog
         open={showPdfUpload}

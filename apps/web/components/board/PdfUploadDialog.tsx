@@ -24,6 +24,48 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /** Compress a canvas to a smaller JPEG data URL */
+  const compressCanvas = (
+    source: HTMLCanvasElement,
+    srcWidth: number,
+    srcHeight: number,
+  ): { src: string; width: number; height: number } => {
+    const MAX_DIM = 600; // max pixel dimension
+    const QUALITY = 0.7; // JPEG quality
+
+    let w = srcWidth;
+    let h = srcHeight;
+
+    // Scale down if too large
+    if (w > MAX_DIM || h > MAX_DIM) {
+      const ratio = Math.min(MAX_DIM / w, MAX_DIM / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+
+    // If already small enough, just convert to JPEG
+    if (w === srcWidth && h === srcHeight) {
+      return {
+        src: source.toDataURL("image/jpeg", QUALITY),
+        width: w,
+        height: h,
+      };
+    }
+
+    // Resize onto a new canvas
+    const resized = document.createElement("canvas");
+    resized.width = w;
+    resized.height = h;
+    const ctx = resized.getContext("2d")!;
+    ctx.drawImage(source, 0, 0, w, h);
+
+    return {
+      src: resized.toDataURL("image/jpeg", QUALITY),
+      width: w,
+      height: h,
+    };
+  };
+
   const handleClose = useCallback(() => {
     if (isProcessing) return;
     setError(null);
@@ -102,10 +144,11 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
                 if (imgData.bitmap) {
                   // pdfjs v4: ImageBitmap-based images
                   ctx.drawImage(imgData.bitmap, 0, 0);
+                  const compressed = compressCanvas(canvas, imgData.width, imgData.height);
                   extractedImages.push({
-                    src: canvas.toDataURL("image/png"),
-                    naturalWidth: imgData.width,
-                    naturalHeight: imgData.height,
+                    src: compressed.src,
+                    naturalWidth: compressed.width,
+                    naturalHeight: compressed.height,
                     page: pageNum,
                   });
                   pageImageCount++;
@@ -144,10 +187,11 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
                   }
 
                   ctx.putImageData(imageData, 0, 0);
+                  const compressed = compressCanvas(canvas, imgData.width, imgData.height);
                   extractedImages.push({
-                    src: canvas.toDataURL("image/png"),
-                    naturalWidth: imgData.width,
-                    naturalHeight: imgData.height,
+                    src: compressed.src,
+                    naturalWidth: compressed.width,
+                    naturalHeight: compressed.height,
                     page: pageNum,
                   });
                   pageImageCount++;
@@ -164,10 +208,11 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
                     canvas.width = img.width;
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
+                    const compressed = compressCanvas(canvas, img.width, img.height);
                     extractedImages.push({
-                      src: canvas.toDataURL("image/png"),
-                      naturalWidth: img.width,
-                      naturalHeight: img.height,
+                      src: compressed.src,
+                      naturalWidth: compressed.width,
+                      naturalHeight: compressed.height,
                       page: pageNum,
                     });
                     pageImageCount++;
@@ -184,16 +229,17 @@ export function PdfUploadDialog({ open, onClose, onImagesReady }: Props) {
           // --- Strategy 2: Fallback — render the whole page as image ---
           if (pageImageCount === 0) {
             try {
-              const viewport = page.getViewport({ scale: 2 });
+              const viewport = page.getViewport({ scale: 1.5 });
               const canvas = document.createElement("canvas");
               canvas.width = viewport.width;
               canvas.height = viewport.height;
               const ctx = canvas.getContext("2d")!;
               await page.render({ canvasContext: ctx, viewport }).promise;
+              const compressed = compressCanvas(canvas, viewport.width, viewport.height);
               extractedImages.push({
-                src: canvas.toDataURL("image/png"),
-                naturalWidth: viewport.width,
-                naturalHeight: viewport.height,
+                src: compressed.src,
+                naturalWidth: compressed.width,
+                naturalHeight: compressed.height,
                 page: pageNum,
               });
             } catch {

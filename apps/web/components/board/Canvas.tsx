@@ -604,35 +604,33 @@ export function Canvas() {
     updateMyPresence({ cursor: null });
   }, [updateMyPresence]);
 
+  // Use ref for camera in wheel handler to avoid recreating the callback
+  const cameraRef = useRef(camera);
+  cameraRef.current = camera;
+
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
 
+      const cam = cameraRef.current;
+
       if (e.shiftKey) {
-        // Shift + Scroll: horizontal pan
         setCamera({
-          ...camera,
-          x: camera.x - e.deltaY,
+          ...cam,
+          x: cam.x - e.deltaY,
         });
       } else {
-        // Normal scroll: zoom around cursor
-        // Normalize delta for different scroll modes (pixel vs line vs page)
-        let delta = e.deltaY;
-        if (e.deltaMode === 1) delta *= 30;  // line mode
-        if (e.deltaMode === 2) delta *= 300; // page mode
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.min(Math.max(cam.zoom * zoomFactor, 0.1), 5);
 
-        const zoomFactor = delta > 0 ? 0.9 : 1.1; // 10% per scroll step
-        const newZoom = Math.min(Math.max(camera.zoom * zoomFactor, 0.1), 5);
-
-        const newCamera = {
-          x: e.clientX - (e.clientX - camera.x) * (newZoom / camera.zoom),
-          y: e.clientY - (e.clientY - camera.y) * (newZoom / camera.zoom),
+        setCamera({
+          x: e.clientX - (e.clientX - cam.x) * (newZoom / cam.zoom),
+          y: e.clientY - (e.clientY - cam.y) * (newZoom / cam.zoom),
           zoom: newZoom,
-        };
-        setCamera(newCamera);
+        });
       }
     },
-    [camera, setCamera],
+    [setCamera],
   );
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { useEditorStore, screenToCanvas, zoomAroundPoint, boundsOverlap } from "@whiteboard/editor";
 import { useStorage, useMutation, useMyPresence, useHistory, useStatus } from "@/lib/liveblocks";
 import type { BoardElement, Point } from "@whiteboard/types";
@@ -25,6 +26,9 @@ export function Canvas() {
   const isPanningRef = useRef(false);
   const lastPointerRef = useRef<Point>({ x: 0, y: 0 });
   const drawingRef = useRef<{ elementId: string; startCanvas: Point } | null>(null);
+
+  const params = useParams();
+  const boardId = params.boardId as string;
 
   const camera = useEditorStore((s) => s.camera);
   const setCamera = useEditorStore((s) => s.setCamera);
@@ -51,6 +55,36 @@ export function Canvas() {
     y: number;
     elementId: string;
   } | null>(null);
+
+  // --- Camera persistence per board ---
+  const cameraKey = `whiteboard-camera-${boardId}`;
+  const cameraRestoredRef = useRef(false);
+
+  // Restore camera on mount
+  useEffect(() => {
+    if (cameraRestoredRef.current) return;
+    try {
+      const saved = localStorage.getItem(cameraKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.x !== undefined && parsed.y !== undefined && parsed.zoom !== undefined) {
+          setCamera(parsed);
+        }
+      }
+    } catch {}
+    cameraRestoredRef.current = true;
+  }, [cameraKey, setCamera]);
+
+  // Save camera on change (debounced)
+  useEffect(() => {
+    if (!cameraRestoredRef.current) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(cameraKey, JSON.stringify(camera));
+      } catch {}
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [camera, cameraKey]);
 
   // Show PDF dialog when image tool is selected
   useEffect(() => {

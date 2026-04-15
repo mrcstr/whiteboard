@@ -24,6 +24,7 @@ export function Canvas() {
   const dragStartRef = useRef<Point | null>(null);
   const isPanningRef = useRef(false);
   const lastPointerRef = useRef<Point>({ x: 0, y: 0 });
+  const drawingRef = useRef<{ elementId: string; startCanvas: Point } | null>(null);
 
   const camera = useEditorStore((s) => s.camera);
   const setCamera = useEditorStore((s) => s.setCamera);
@@ -375,8 +376,21 @@ export function Canvas() {
           height: Math.abs(point.y - start.y),
         });
       }
+
+      // Drag-to-draw for shapes and frames
+      if (drawingRef.current) {
+        const start = drawingRef.current.startCanvas;
+        const x = Math.min(start.x, canvasPoint.x);
+        const y = Math.min(start.y, canvasPoint.y);
+        const w = Math.abs(canvasPoint.x - start.x);
+        const h = Math.abs(canvasPoint.y - start.y);
+        updateElement(drawingRef.current.elementId, {
+          position: { x, y },
+          size: { width: Math.max(w, 1), height: Math.max(h, 1) },
+        } as any);
+      }
     },
-    [camera, setCamera, activeTool, selectedIds.length, updateMyPresence, setSelectionBox],
+    [camera, setCamera, activeTool, selectedIds.length, updateMyPresence, setSelectionBox, updateElement],
   );
 
   const handlePointerDown = useCallback(
@@ -422,20 +436,23 @@ export function Canvas() {
           const shape = createShape(canvasPoint, userId, {
             shapeType: activeShapeType,
           });
+          // Override size to 1x1 — will be resized during drag
+          shape.size = { width: 1, height: 1 };
           history.pause();
           addElement(shape);
-          history.resume();
+          drawingRef.current = { elementId: shape.id, startCanvas: canvasPoint };
           setSelectedIds([shape.id]);
-          setActiveTool("select");
           return;
         }
         case "frame": {
-          const frame = createFrame(canvasPoint, userId);
+          const frame = createFrame(canvasPoint, userId, {
+            width: 1,
+            height: 1,
+          });
           history.pause();
           addElement(frame);
-          history.resume();
+          drawingRef.current = { elementId: frame.id, startCanvas: canvasPoint };
           setSelectedIds([frame.id]);
-          setActiveTool("select");
           return;
         }
         case "line": {
@@ -494,6 +511,22 @@ export function Canvas() {
   const handlePointerUp = useCallback(() => {
     isPanningRef.current = false;
 
+    // Finalize drag-to-draw
+    if (drawingRef.current) {
+      const id = drawingRef.current.elementId;
+      const el = sortedElements.find((e) => e.id === id);
+      // If barely dragged, give a default size
+      if (el && el.size.width < 10 && el.size.height < 10) {
+        const defaultSize = el.type === "frame"
+          ? { width: 600, height: 400 }
+          : { width: 150, height: 150 };
+        updateElement(id, { size: defaultSize } as any);
+      }
+      history.resume();
+      drawingRef.current = null;
+      setActiveTool("select");
+    }
+
     // Rubber-band selection: find elements inside the selection box
     if (selectionBox && dragStartRef.current) {
       const box = selectionBox;
@@ -531,7 +564,7 @@ export function Canvas() {
 
     dragStartRef.current = null;
     setSelectionBox(null);
-  }, [selectionBox, camera, sortedElements, setSelectedIds, setSelectionBox]);
+  }, [selectionBox, camera, sortedElements, setSelectedIds, setSelectionBox, updateElement, history, setActiveTool]);
 
   const handlePointerLeave = useCallback(() => {
     updateMyPresence({ cursor: null });
